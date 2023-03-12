@@ -1682,21 +1682,6 @@ namespace MaaWpfGui
             }
         }
 
-        private bool _useAria2 = Convert.ToBoolean(ViewStatusStorage.Get("VersionUpdate.UseAria2", bool.FalseString));
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to use Aria 2.
-        /// </summary>
-        public bool UseAria2
-        {
-            get => _useAria2;
-            set
-            {
-                SetAndNotify(ref _useAria2, value);
-                ViewStatusStorage.Set("VersionUpdate.UseAria2", value.ToString());
-            }
-        }
-
         private bool _autoDownloadUpdatePackage = Convert.ToBoolean(ViewStatusStorage.Get("VersionUpdate.AutoDownloadUpdatePackage", bool.TrueString));
 
         /// <summary>
@@ -2298,7 +2283,7 @@ namespace MaaWpfGui
             set
             {
                 SetAndNotify(ref _useAlternateStage, value);
-                _taskQueueViewModel.AlternateStageDisplay = value;
+                _taskQueueViewModel.UseAlternateStage = value;
                 ViewStatusStorage.Set("GUI.UseAlternateStage", value.ToString());
                 if (value)
                 {
