@@ -293,29 +293,41 @@ void asst::BattleHelper::label_operators(const cv::Mat& image, bool force)
     last_time = now;
 
     cv::Mat draw = image.clone();
+    std::string base_path = "debug/label/battlefield/" + utils::get_random_filestem();
     std::string label = m_stage_name;
     for (const auto& [name, loc] : m_battlefield_opers) {
-        auto target_iter = m_normal_tile_info.find(loc);
-        if (target_iter == m_normal_tile_info.end()) {
+        auto role = BattleData.get_role(name);
+        if (role == Role::Drone || role == Role::Unknown) {
             continue;
         }
-        BattleSkillReadyImageAnalyzer skill_analyzer(image);
-        const Point& point = target_iter->second.pos;
-        skill_analyzer.set_base_point(point);
-        int skill_ready = skill_analyzer.analyze();
 
-        label += std::format("\n{} {} {} {}", name, point.x, point.y, skill_ready);
-        cv::circle(draw, cv::Point(point.x, point.y), 5, cv::Scalar(0, 0, 255), -1);
-        if (skill_ready) {
-            cv::putText(draw, "ready", cv::Point(point.x, point.y - 10), 1, 1.2, cv::Scalar(0, 0, 255), 2);
-        }
+        // Point left_loc { loc.x - 1, loc.y };
+        // Point right_loc { loc.x + 1, loc.y };
+        // Point up_loc { loc.x, loc.y - 1 };
+        // Point down_loc { loc.x, loc.y + 1 };
+        // int left_pos = m_normal_tile_info.contains(left_loc) ? m_normal_tile_info.at(left_loc).pos.x : 0;
+        // int right_pos =
+        //     m_normal_tile_info.contains(right_loc) ? m_normal_tile_info.at(right_loc).pos.x : WindowWidthDefault;
+        // int up_pos = m_normal_tile_info.contains(up_loc) ? m_normal_tile_info.at(up_loc).pos.y : 0;
+        // int down_pos =
+        //     m_normal_tile_info.contains(down_loc) ? m_normal_tile_info.at(down_loc).pos.y : WindowHeightDefault;
+
+        Point cur_pos = m_normal_tile_info.at(loc).pos;
+
+        // int left = left_pos ? cur_pos.x - (cur_pos.x - left_pos) / 2 : 0;
+        // int right = right_pos ? cur_pos.x + (right_pos - cur_pos.x) / 2 : WindowWidthDefault;
+        // int up = up_pos ? cur_pos.y - (cur_pos.y - up_pos) / 2 : 0;
+        // int down = down_pos ? cur_pos.y + (down_pos - cur_pos.y) / 2 : WindowHeightDefault;
+
+        auto direction = std::to_string(static_cast<int>(m_battlefield_direction[loc]));
+        cv::Rect rect { cur_pos.x - 48, cur_pos.y - 48, 96, 96 };
+        asst::imwrite(utils::path(base_path + "_" + name + "_" + direction + ".png"), image(rect));
+
+        cv::rectangle(draw, rect, cv::Scalar(0, 0, 255), 2);
+        cv::putText(draw, direction, { rect.x, rect.y - 5 }, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
     }
-    std::string base_path = "debug/label/battlefield/" + utils::get_random_filestem();
-    asst::imwrite(utils::path(base_path + ".png"), image);
-    asst::imwrite(utils::path(base_path + "_draw.png"), draw);
-    std::ofstream label_ofs(utils::path(base_path + ".txt"));
-    label_ofs << label;
-    label_ofs.close();
+
+    asst::imwrite(base_path + "_draw.png", draw);
 }
 
 bool asst::BattleHelper::deploy_oper(const std::string& name, const Point& loc, DeployDirection direction)
@@ -369,7 +381,7 @@ bool asst::BattleHelper::deploy_oper(const std::string& name, const Point& loc, 
 
         m_inst_helper.sleep(use_oper_task_ptr->post_delay);
         m_inst_helper.ctrler()->swipe(target_point, end_point, swipe_oper_task_ptr->post_delay);
-        m_inst_helper.sleep(use_oper_task_ptr->pre_delay);
+        // m_inst_helper.sleep(use_oper_task_ptr->pre_delay);
     }
 
     if (deploy_with_pause) {
@@ -377,7 +389,12 @@ bool asst::BattleHelper::deploy_oper(const std::string& name, const Point& loc, 
     }
 
     m_battlefield_opers.emplace(name, loc);
+    m_battlefield_direction[loc] = direction;
     m_used_tiles.emplace(loc, name);
+
+    label_operators(m_inst_helper.ctrler()->get_image(), true);
+    label_operators(m_inst_helper.ctrler()->get_image(), true);
+    label_operators(m_inst_helper.ctrler()->get_image(), true);
 
     return true;
 }

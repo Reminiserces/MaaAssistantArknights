@@ -82,6 +82,7 @@ namespace asst
         std::map<std::string, battle::DeploymentOper> m_cur_deployment_opers;
 
         std::map<std::string, Point> m_battlefield_opers;
+        std::map<Point, battle::DeployDirection> m_battlefield_direction;
         std::map<Point, std::string> m_used_tiles;
 
     private:
