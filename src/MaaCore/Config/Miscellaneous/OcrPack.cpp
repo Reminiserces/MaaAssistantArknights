@@ -11,15 +11,13 @@ ASST_SUPPRESS_CV_WARNINGS_END
 
 #include "Config/GeneralConfig.h"
 #include "Utils/Demangle.hpp"
+#include "Utils/File.hpp"
 #include "Utils/Logger.hpp"
 #include "Utils/Platform.hpp"
 #include "Utils/Ranges.hpp"
 #include "Utils/StringMisc.hpp"
-#include "Utils/File.hpp"
 
-
-asst::OcrPack::OcrPack()
-    : m_det(nullptr), m_rec(nullptr), m_ocr(nullptr)
+asst::OcrPack::OcrPack() : m_det(nullptr), m_rec(nullptr), m_ocr(nullptr)
 {
     LogTraceFunction;
 }
@@ -36,9 +34,6 @@ bool asst::OcrPack::load(const std::filesystem::path& path)
 
     auto& paddle_dir = path;
 
-    fastdeploy::RuntimeOption option;
-    option.UseOrtBackend();
-
     do {
         using namespace asst::utils::path_literals;
         const auto det_dir = paddle_dir / "det"_p;
@@ -51,8 +46,11 @@ bool asst::OcrPack::load(const std::filesystem::path& path)
 
         if (std::filesystem::exists(dst_model_file)) {
             auto det_model = asst::utils::read_file<std::string>(dst_model_file);
+            fastdeploy::RuntimeOption option;
+            option.UseOrtBackend();
             option.SetModelBuffer(det_model.data(), det_model.size(), nullptr, 0, fastdeploy::ModelFormat::ONNX);
-            m_det = std::make_unique<fastdeploy::vision::ocr::DBDetector>("dummy.onnx", std::string(), option, fastdeploy::ModelFormat::ONNX);
+            m_det = std::make_unique<fastdeploy::vision::ocr::DBDetector>("dummy.onnx", std::string(), option,
+                                                                          fastdeploy::ModelFormat::ONNX);
         }
         else if (!m_det) {
             break;
@@ -62,8 +60,11 @@ bool asst::OcrPack::load(const std::filesystem::path& path)
         if (std::filesystem::exists(rec_model_file) && std::filesystem::exists(rec_label_file)) {
             auto rec_model = asst::utils::read_file<std::string>(rec_model_file);
             auto label = asst::utils::read_file<std::string>(rec_label_file);
+            fastdeploy::RuntimeOption option;
+            option.UseOrtBackend();
             option.SetModelBuffer(rec_model.data(), rec_model.size(), nullptr, 0, fastdeploy::ModelFormat::ONNX);
-            m_rec = std::make_unique<fastdeploy::vision::ocr::Recognizer>("dummy.onnx", std::string(), label, option, fastdeploy::ModelFormat::ONNX);
+            m_rec = std::make_unique<fastdeploy::vision::ocr::Recognizer>("dummy.onnx", std::string(), label, option,
+                                                                          fastdeploy::ModelFormat::ONNX);
         }
         else if (!m_rec) {
             break;
@@ -77,7 +78,6 @@ bool asst::OcrPack::load(const std::filesystem::path& path)
             break;
         }
     } while (false);
-
 
     return m_det != nullptr && m_rec != nullptr && m_ocr != nullptr && m_det->Initialized() && m_rec->Initialized() &&
            m_ocr->Initialized();
