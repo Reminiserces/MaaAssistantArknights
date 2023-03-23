@@ -25,6 +25,13 @@ asst::OcrPack::OcrPack() : m_det(nullptr), m_rec(nullptr), m_ocr(nullptr)
 asst::OcrPack::~OcrPack()
 {
     LogTraceFunction;
+
+    static std::mutex release_mutex;
+    std::unique_lock<std::mutex> release_lock(release_mutex);
+
+    m_det = nullptr;
+    m_rec = nullptr;
+    m_ocr = nullptr;
 }
 
 bool asst::OcrPack::load(const std::filesystem::path& path)
